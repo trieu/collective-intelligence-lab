@@ -1,0 +1,14 @@
+openai>=1.100.0
+langgraph>=0.2.0,<1.0.0
+networkx>=3.2
+numpy>=1.26,<2.0
+pandas>=2.2.0
+polars>=1.0
+plotly>=5.20
+matplotlib>=3.8
+sqlalchemy>=2.0
+psycopg[binary]>=3.2
+python-dotenv>=1.0
+mesa>=3.0.0
+jupyterlab>=4.0
+ipykernel>=6.0
