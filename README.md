@@ -62,14 +62,15 @@ The notebook covers:
 3. Social-network construction and community detection
 4. Rule-based decision engine and simulation
 5. Analytics and parameter sweeps
-6. GPT-6 Luna recommendations
-7. LangGraph decision workflow
-8. Opt-in LLM-assisted experiment
-9. Optional PostgreSQL persistence
-10. Polars analytics and CSV export
-11. Research experiment design
+6. Baseline and multi-seed analytics
+7. GPT-6 Luna recommendations
+8. LangGraph decision workflow
+9. Opt-in LLM-assisted experiment
+10. Optional PostgreSQL event and graph persistence
+11. Polars analytics and CSV export
+12. Research experiment design
 
-The baseline configuration uses 100 agents, up to 12 rounds, a mission threshold of 20 sacrifices, and seed 42. The simulation can stop early when the threshold is reached.
+The baseline configuration uses 100 agents, up to 12 rounds, a mission threshold of 20 sacrifices, and seed 42. Before simulation, the notebook initializes agents, builds a Watts-Strogatz graph, detects communities, and visualizes the topology. The simulation copies that initialized state so the pre-run objects remain available for comparison. It can stop early when the threshold is reached.
 
 ## LLM mode
 
@@ -106,17 +107,32 @@ Create a PostgreSQL database and set `DATABASE_URL` in `.env`. The example forma
 DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/collective_sim
 ```
 
-The notebook can create a `simulation_events` table and persist event fields such as round, agent ID, action, probability, resources, and commitment state.
+The notebook persists decision history in `simulation_events` and graph state in:
 
-Call:
+- `simulation_graph_snapshots` — run-level snapshot identity, topology counts, seed, and graph metadata
+- `simulation_graph_nodes` — agent personality, current state, cluster, degree, and NetworkX node metadata
+- `simulation_graph_edges` — normalized relationships, inferred or explicit weights, direction, and NetworkX edge metadata
+
+Call the persistence helpers:
 
 ```python
 persist_events(events_df)
+snapshot_id = persist_graph_state(
+    agents,
+    G,
+    run_id=run_id,
+    snapshot_label="final",
+    seed=42,
+)
 ```
 
-after the simulation runs. If `DATABASE_URL` is absent, persistence skips. The function defaults to `recreate=False`; `recreate=True` drops and recreates the table, so use it only when you intend to discard existing table contents. The persistence cell's example uses `recreate=True` for an initial setup.
+PostgreSQL is the default graph-state source. The initialization UI requires an explicit choice before simulation. Paste a snapshot UUID into the widget and click **Load Snapshot**, or click **Create New Graph**. The notebook never silently selects a database snapshot.
 
-Table names must start with a letter or underscore and contain only letters, numbers, or underscores.
+Creating a new graph initializes agent personality/state from `SEED`, persists the graph with `snapshot_label="initial"`, and visualizes it before simulation. After completion it persists the updated agent state and graph with `snapshot_label="final"`.
+
+The initial and final snapshots use the same `run_id`, linking the before/after state. A loaded run reuses its stored ID, while a fresh run generates a UUID or uses `SIMULATION_RUN_ID`. Both loading and new-graph persistence require `DATABASE_URL`.
+
+Graph and event persistence default to `recreate=False`. `persist_graph_state(..., recreate=True)` drops the graph snapshot tables, and `persist_events(..., recreate=True)` drops the event table, so use either only when you intend to discard existing data. Custom event table names must start with a letter or underscore and contain only letters, numbers, or underscores.
 
 ## Generated outputs
 

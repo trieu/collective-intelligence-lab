@@ -12,3 +12,4 @@ python-dotenv>=1.0
 mesa>=3.0.0
 jupyterlab>=4.0
 ipykernel>=6.0
+ipywidgets>=8.0
